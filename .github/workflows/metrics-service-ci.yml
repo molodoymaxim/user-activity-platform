@@ -1,0 +1,48 @@
+name: Metrics Service CI
+
+on:
+  push:
+    paths:
+      - 'services/metrics-service/**'
+      - '.github/workflows/metrics-service-ci.yml'
+    pull-request:
+      paths:
+        - 'services/metrics-service/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./services/metrics-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.0'
+
+      - name: Verify go.mod
+        run: go mod verify
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Check formatting
+        run: |
+          go fmt ./...
+          git diff --exit-code || (echo "Code is not formatted. Run 'go fmt ./...'"; exit 1)
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          args: --timeout=5m
+
+#      - name: Run unit tests
+#        run: go test ./..
+
+      - name: Build binary
+        run: go build ./..
